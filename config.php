@@ -84,14 +84,16 @@ function get_base_url() {
     if (getenv('APP_URL')) {
         return rtrim(getenv('APP_URL'), '/');
     }
-    if (getenv('VERCEL_URL')) {
-        return 'https://' . rtrim(getenv('VERCEL_URL'), '/');
-    }
     if (isset($_SERVER['HTTP_HOST'])) {
         $scheme = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') ? 'https' : 'http';
         $host = $_SERVER['HTTP_HOST'];
         
-        // Normalize paths
+        // If on Vercel or cloud domain, it always runs from domain root
+        if (getenv('VERCEL') || strpos($host, 'vercel.app') !== false) {
+            return $scheme . '://' . $host;
+        }
+
+        // Normalize paths for local XAMPP subdirectories
         $docRoot = str_replace('\\', '/', realpath($_SERVER['DOCUMENT_ROOT'] ?? ''));
         $currentDir = str_replace('\\', '/', dirname(realpath(__FILE__)));
         
@@ -102,6 +104,9 @@ function get_base_url() {
         $subDir = trim($subDir, '/');
         
         return $scheme . '://' . $host . ($subDir ? '/' . $subDir : '');
+    }
+    if (getenv('VERCEL_URL')) {
+        return 'https://' . rtrim(getenv('VERCEL_URL'), '/');
     }
     return 'http://localhost/organ_donation_portal';
 }
