@@ -1,0 +1,18 @@
+{
+  "name": "organ-donation-portal",
+  "version": "1.0.0",
+  "description": "Organ Donation – Recipient Matching Portal (LifeBridge)",
+  "scripts": {
+    "start": "php -S 0.0.0.0:8000",
+    "dev": "php -S 0.0.0.0:8000",
+    "build": "node -e \"console.log('Build completed successfully')\""
+  },
+  "keywords": [
+    "organ-donation",
+    "php",
+    "mysql",
+    "material-design"
+  ],
+  "author": "ADITHYAN P S",
+  "license": "ISC"
+}

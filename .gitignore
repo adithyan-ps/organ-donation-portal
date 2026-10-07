@@ -1,0 +1,31 @@
+# Environment variables & Secrets
+.env
+.env.local
+.env.*.local
+*.env
+
+# Temporary cookies & session files
+cookies.txt
+cookies_adm.txt
+cookie*.txt
+*.cookie
+
+# Scratch testing scripts & temporary artifacts
+scratch/
+tmp/
+*.tmp
+*.log
+
+# Dependencies
+node_modules/
+vendor/
+
+# Vercel deployment cache
+.vercel/
+
+# IDE & OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
