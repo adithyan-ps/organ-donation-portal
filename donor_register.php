@@ -93,10 +93,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Check if email already exists in users table
     if (empty($errors)) {
         $pdo = get_db_connection();
-        $checkStmt = $pdo->prepare("SELECT id FROM users WHERE email = ?");
-        $checkStmt->execute([$form_data['email']]);
-        if ($checkStmt->fetch()) {
-            $errors['email'] = 'An account with this email address is already registered. Please log in instead.';
+        if (!$pdo) {
+            $errors['general'] = 'Database is currently unreachable. If running on Vercel, please connect your cloud MySQL provider via DATABASE_URL.';
+        } else {
+            $checkStmt = $pdo->prepare("SELECT id FROM users WHERE email = ?");
+            $checkStmt->execute([$form_data['email']]);
+            if ($checkStmt->fetch()) {
+                $errors['email'] = 'An account with this email address is already registered. Please log in instead.';
+            }
         }
     }
 

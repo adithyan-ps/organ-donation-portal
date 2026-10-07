@@ -4,8 +4,7 @@
   "description": "Organ Donation – Recipient Matching Portal (LifeBridge)",
   "scripts": {
     "start": "php -S 0.0.0.0:8000",
-    "dev": "php -S 0.0.0.0:8000",
-    "build": "node -e \"console.log('Build completed successfully')\""
+    "dev": "php -S 0.0.0.0:8000"
   },
   "keywords": [
     "organ-donation",

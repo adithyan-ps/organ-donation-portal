@@ -118,12 +118,28 @@ function get_blood_compatibility() {
 }
 
 /**
+ * Check whether database is accessible
+ */
+function is_db_connected() {
+    return get_db_connection(false) !== null;
+}
+
+/**
  * Get or create PDO database connection with auto-initialization fallback
  */
-function get_db_connection() {
+function get_db_connection($throwOnError = false) {
     static $pdo = null;
+    static $attempted = false;
+
     if ($pdo !== null) {
         return $pdo;
+    }
+
+    if ($attempted) {
+        if ($throwOnError) {
+            throw new Exception("Database is currently unreachable.");
+        }
+        return null;
     }
 
     $dsn = "mysql:host=" . DB_HOST . ";port=" . DB_PORT . ";dbname=" . DB_NAME . ";charset=utf8mb4";
@@ -131,14 +147,16 @@ function get_db_connection() {
         PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
         PDO::ATTR_EMULATE_PREPARES   => false,
+        PDO::ATTR_TIMEOUT            => 2, // 2s timeout prevents serverless lambdas from hanging
     ];
 
     try {
         $pdo = new PDO($dsn, DB_USER, DB_PASS, $options);
         return $pdo;
     } catch (PDOException $e) {
+        $attempted = true;
         // If database doesn't exist yet, attempt automatic creation
-        if ($e->getCode() == 1049) {
+        if ($e->getCode() == 1049 && (DB_HOST === '127.0.0.1' || DB_HOST === 'localhost')) {
             try {
                 $serverDsn = "mysql:host=" . DB_HOST . ";port=" . DB_PORT . ";charset=utf8mb4";
                 $serverPdo = new PDO($serverDsn, DB_USER, DB_PASS, $options);
@@ -155,9 +173,19 @@ function get_db_connection() {
                 }
                 return $pdo;
             } catch (Exception $initErr) {
-                die("Database Auto-Creation Error: " . htmlspecialchars($initErr->getMessage()));
+                error_log("Database Auto-Creation Error: " . $initErr->getMessage());
             }
         }
-        die("Database Connection Error: " . htmlspecialchars($e->getMessage()) . "<br><br>Please make sure MySQL is running in XAMPP/WAMP.");
+        error_log("Database Connection Warning: " . $e->getMessage());
+
+        if ($throwOnError) {
+            die("<div style='font-family:sans-serif;padding:30px;max-width:640px;margin:50px auto;border:1px solid #fed7aa;background:#fffbeb;border-radius:12px;color:#9a3412;'>
+                <h3 style='margin-top:0'>Database Notice</h3>
+                <p>Unable to connect to MySQL database (" . htmlspecialchars(DB_HOST) . ":" . htmlspecialchars(DB_PORT) . ").</p>
+                <p style='font-size:0.9rem;color:#78350f'>To enable database functionality on Vercel, please connect your cloud MySQL provider (e.g. Railway, Aiven, Supabase) via <code>DATABASE_URL</code> in Vercel Project Settings.</p>
+                <p style='margin-bottom:0'><a href='/' style='color:#0284c7;font-weight:600;text-decoration:none;'>&larr; Return to Home</a></p>
+            </div>");
+        }
+        return null;
     }
 }

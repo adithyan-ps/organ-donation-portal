@@ -39,6 +39,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             try {
                 $pdo = get_db_connection();
+                if (!$pdo) {
+                    throw new Exception("Database is currently unreachable. If running on Vercel, please connect your cloud MySQL provider via DATABASE_URL.");
+                }
                 $stmt = $pdo->prepare("SELECT * FROM users WHERE email = ? LIMIT 1");
                 $stmt->execute([$email]);
                 $user = $stmt->fetch();
