@@ -23,6 +23,23 @@ document.addEventListener('DOMContentLoaded', () => {
         navToggle.setAttribute('aria-expanded', 'false');
       }
     });
+
+    // Auto-close menu when tapping any navigation link
+    const mobileLinks = navMenuWrapper.querySelectorAll('.nav-link, .nav-mobile-actions a');
+    mobileLinks.forEach((link) => {
+      link.addEventListener('click', () => {
+        navMenuWrapper.classList.remove('show');
+        navToggle.setAttribute('aria-expanded', 'false');
+      });
+    });
+
+    // Close menu on Escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && navMenuWrapper.classList.contains('show')) {
+        navMenuWrapper.classList.remove('show');
+        navToggle.setAttribute('aria-expanded', 'false');
+      }
+    });
   }
 
   // 1b. Admin Sidebar Mobile Toggle

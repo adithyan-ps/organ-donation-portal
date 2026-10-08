@@ -50,8 +50,8 @@ $flash = get_flash_message();
 
   <!-- Cloud Serverless / Database Mode Banner -->
   <?php if (!is_db_connected()): ?>
-  <div style="background: linear-gradient(90deg, #fffbeb, #fef3c7); border-bottom: 1px solid #fde68a; padding: 8px 16px; font-size: 0.85rem; color: #92400e; text-align: center; position: relative; z-index: 1000; display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap;">
-    <span>⚡ <strong>Cloud Serverless Preview:</strong> Running on Vercel. Connect a cloud MySQL database via <code>DATABASE_URL</code> in Vercel settings for production storage.</span>
+  <div style="background: linear-gradient(90deg, #fffbeb, #fef3c7); border-bottom: 1px solid #fde68a; padding: 8px 12px; font-size: 0.82rem; line-height: 1.4; color: #92400e; text-align: center; position: relative; z-index: 1000; display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap; word-break: break-word;">
+    <span>⚡ <strong>Cloud Serverless Preview:</strong> Running on Vercel. Connect a cloud MySQL database via <code>DATABASE_URL</code> in Vercel settings for live data persistence.</span>
   </div>
   <?php endif; ?>
 

@@ -607,16 +607,17 @@
 /* --------------------------------------------------------------------------
    Responsive Dashboard Styles & Breakpoints
    -------------------------------------------------------------------------- */
+/* --------------------------------------------------------------------------
+   Responsive Dashboard Styles & Breakpoints for ALL Screen Sizes
+   -------------------------------------------------------------------------- */
 @media (max-width: 1024px) {
   .kpi-grid {
     grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
   }
   .profile-info-grid {
     grid-template-columns: 1fr;
   }
-}
-
-@media (max-width: 900px) {
   .dashboard-wrapper {
     flex-direction: column;
   }
@@ -634,6 +635,7 @@
   }
   .sidebar-menu.show {
     display: flex;
+    animation: fadeInDown 0.2s ease-out;
   }
   .sidebar-footer {
     display: none;
@@ -645,25 +647,77 @@
 
 @media (max-width: 768px) {
   .kpi-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.85rem;
   }
   .filter-bar {
     flex-direction: column;
     align-items: stretch;
+    gap: 0.85rem;
   }
   .filter-group {
     flex-direction: column;
     width: 100%;
     align-items: stretch;
+    gap: 0.65rem;
   }
   .search-input-wrapper, .filter-group select, .filter-group .btn {
     width: 100% !important;
   }
-  .modal-content {
+  .modal-dialog {
     max-width: 96vw;
     margin: 0.5rem auto;
   }
+  .modal-content {
+    max-width: 96vw;
+    max-height: 92vh;
+  }
   .modal-footer .btn {
     width: 100%;
+  }
+  .dossier-grid {
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .dashboard-main {
+    padding: 1rem 0.75rem;
+  }
+  .dashboard-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  .dashboard-header .btn {
+    width: 100%;
+    min-height: 44px;
+  }
+  .kpi-grid {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+  .kpi-card {
+    padding: 1rem 1.15rem;
+  }
+  .kpi-number {
+    font-size: 1.85rem;
+  }
+  .table-card {
+    border-radius: var(--radius-lg);
+  }
+  .data-table th, .data-table td {
+    padding: 0.85rem 0.75rem;
+    font-size: 0.85rem;
+  }
+  .data-table .btn {
+    padding: 0.4rem 0.65rem;
+    font-size: 0.78rem;
+  }
+  .sidebar-brand {
+    padding: 1rem 1.25rem;
+    height: 64px;
   }
 }

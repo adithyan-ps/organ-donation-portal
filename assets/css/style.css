@@ -1766,15 +1766,92 @@ p:last-child {
 }
 
 /* --------------------------------------------------------------------------
-   Responsive Media Queries
+   Responsive Media Queries for ALL Screen Sizes
    -------------------------------------------------------------------------- */
+
+/* Global Touch & Responsive Tweaks */
+*, *::before, *::after {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 1. Ultra-Wide & 4K Displays (>= 1440px) */
+@media (min-width: 1440px) {
+  .container {
+    max-width: 1360px;
+  }
+  .hero-title {
+    font-size: 3.5rem;
+  }
+}
+
+/* 2. Tablets Landscape & Small Laptops (<= 1024px) */
 @media (max-width: 1024px) {
+  .nav-menu-wrapper, .desktop-only {
+    display: none;
+  }
+  .mobile-nav-controls {
+    display: flex;
+  }
+  .nav-menu-wrapper.show {
+    display: flex;
+    flex-direction: column;
+    position: absolute;
+    top: 76px;
+    left: 0;
+    width: 100%;
+    max-height: calc(100vh - 76px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    background: #ffffff;
+    padding: 1.5rem;
+    box-shadow: var(--shadow-xl);
+    border-bottom: 1px solid var(--border);
+    animation: fadeInDown 0.25s ease-out;
+  }
+  .nav-menu-wrapper.show .nav-menu {
+    flex-direction: column;
+    width: 100%;
+    align-items: stretch;
+    gap: 0.35rem;
+  }
+  .nav-menu-wrapper.show .nav-link {
+    padding: 0.75rem 1rem;
+    font-size: 0.95rem;
+    height: auto;
+    border-radius: var(--radius-md);
+  }
+  .nav-menu-wrapper.show .nav-mobile-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-top: 1.25rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--border);
+  }
   .hero-grid {
     grid-template-columns: 1fr;
-    gap: 3rem;
+    gap: 2.75rem;
   }
   .stats-grid {
     grid-template-columns: repeat(2, 1fr);
+    gap: 1.15rem;
   }
   .footer-grid {
     grid-template-columns: repeat(2, 1fr);
@@ -1789,50 +1866,196 @@ p:last-child {
   }
 }
 
+/* 3. Tablets Portrait (<= 768px) */
 @media (max-width: 768px) {
-  .nav-menu-wrapper, .desktop-only {
-    display: none;
+  .section {
+    padding: 3.75rem 0;
   }
-  .mobile-nav-controls {
-    display: flex;
-  }
-  .nav-menu-wrapper.show {
-    display: flex;
-    flex-direction: column;
-    position: absolute;
-    top: 76px;
-    left: 0;
-    width: 100%;
-    background: #ffffff;
-    padding: 1.5rem;
-    box-shadow: var(--shadow-xl);
-    border-bottom: 1px solid var(--border);
-  }
-  .nav-menu-wrapper.show .nav-menu {
-    flex-direction: column;
-    width: 100%;
-    align-items: stretch;
-    gap: 0.25rem;
-  }
-  .nav-menu-wrapper.show .nav-mobile-actions {
-    display: flex;
-  }
-  .stats-grid {
-    grid-template-columns: 1fr;
+  .section-header {
+    margin-bottom: 2.25rem;
   }
   .steps-grid, .sdg-grid, .awareness-grid, .myths-grid {
     grid-template-columns: 1fr;
+    gap: 1.25rem;
   }
   .form-grid {
     grid-template-columns: 1fr;
+    gap: 1rem;
   }
   .form-group.col-span-2 {
     grid-column: span 1;
   }
   .sim-organ-chips {
     grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
   }
   .footer-grid {
     grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+  .flash-message-container {
+    top: 1rem;
+    left: 1rem;
+    right: 1rem;
+    max-width: none;
+  }
+  .modal-dialog {
+    max-width: 95vw;
+    margin: 1rem auto;
+  }
+}
+
+/* 4. Standard Mobile Screens (<= 480px) */
+@media (max-width: 480px) {
+  .container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  .navbar {
+    height: 68px;
+  }
+  .nav-container {
+    height: 68px;
+    gap: 0.65rem;
+  }
+  .nav-menu-wrapper.show {
+    top: 68px;
+    max-height: calc(100vh - 68px);
+    padding: 1.25rem 1rem;
+  }
+  .brand-sub {
+    display: none;
+  }
+  .brand-title {
+    font-size: 1.12rem;
+  }
+  .nav-brand img {
+    width: 36px;
+    height: 36px;
+  }
+  .hero {
+    padding: 2.25rem 0 3rem 0;
+  }
+  .hero-pill {
+    font-size: 0.78rem;
+    padding: 0.35rem 0.75rem;
+  }
+  .hero-title {
+    font-size: 1.85rem;
+    line-height: 1.18;
+    margin-bottom: 1rem;
+  }
+  .hero-lead {
+    font-size: 0.98rem;
+    line-height: 1.55;
+    margin-bottom: 1.75rem;
+  }
+  .hero-cta-group {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+  .hero-cta-group .btn {
+    width: 100%;
+    min-height: 48px;
+  }
+  .hero-trust-badge {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  .hero-visual-card {
+    padding: 1.25rem;
+    border-radius: var(--radius-lg);
+  }
+  .stats-grid {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+  .stat-card {
+    padding: 1.15rem 1.25rem;
+    border-radius: var(--radius-lg);
+  }
+  .stat-icon {
+    width: 48px;
+    height: 48px;
+    font-size: 1.45rem;
+  }
+  .stat-number {
+    font-size: 1.8rem;
+  }
+  .simulator-controls {
+    padding: 1.25rem;
+  }
+  .simulator-result {
+    padding: 1.5rem 1.25rem;
+  }
+  .sim-blood-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.35rem;
+  }
+  .sim-blood-btn {
+    padding: 0.5rem 0.2rem;
+    font-size: 0.82rem;
+    min-width: 0;
+    min-height: 42px;
+  }
+  .sim-urgency-row {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.4rem;
+  }
+  .sim-urgency-btn {
+    min-height: 42px;
+    font-size: 0.8rem;
+  }
+  .sim-score-number {
+    font-size: 3.2rem;
+  }
+  .chip-selector-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.35rem;
+  }
+  .selector-chip {
+    padding: 0.6rem 0.25rem;
+    font-size: 0.85rem;
+    min-width: 0;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .form-card {
+    padding: 1.5rem 1.25rem;
+  }
+  .btn {
+    min-height: 44px;
+  }
+  .footer {
+    padding: 3rem 0 1.5rem 0;
+  }
+  .footer-bottom {
+    flex-direction: column;
+    text-align: center;
+    gap: 0.5rem;
+  }
+}
+
+/* 5. Compact Small Mobile Screens (<= 360px) */
+@media (max-width: 360px) {
+  .container {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+  .hero-title {
+    font-size: 1.62rem;
+  }
+  .sim-organ-chips {
+    grid-template-columns: 1fr;
+  }
+  .chip-selector-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .mobile-quick-login {
+    display: none;
   }
 }
