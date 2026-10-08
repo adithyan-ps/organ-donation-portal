@@ -192,6 +192,7 @@ function is_db_connected() {
  * Get or create PDO database connection with auto-initialization fallback
  */
 function get_db_connection($throwOnError = false) {
+    global $dbUrl;
     static $pdo = null;
     static $attempted = false;
 
