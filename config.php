@@ -16,8 +16,8 @@ $parsedUrl = $dbUrl ? parse_url($dbUrl) : [];
 if (!defined('DB_HOST')) define('DB_HOST', $parsedUrl['host'] ?? (getenv('DB_HOST') ?: (getenv('MYSQLHOST') ?: '127.0.0.1')));
 if (!defined('DB_PORT')) define('DB_PORT', (string)($parsedUrl['port'] ?? (getenv('DB_PORT') ?: (getenv('MYSQLPORT') ?: '3306'))));
 if (!defined('DB_NAME')) define('DB_NAME', isset($parsedUrl['path']) ? ltrim($parsedUrl['path'], '/') : (getenv('DB_NAME') ?: (getenv('MYSQLDATABASE') ?: 'organ_donation_db')));
-if (!defined('DB_USER')) define('DB_USER', $parsedUrl['user'] ?? (getenv('DB_USER') ?: (getenv('MYSQLUSER') ?: 'root')));
-if (!defined('DB_PASS')) define('DB_PASS', $parsedUrl['pass'] ?? (getenv('DB_PASS') ?: (getenv('MYSQLPASSWORD') ?: '')));
+if (!defined('DB_USER')) define('DB_USER', isset($parsedUrl['user']) ? urldecode($parsedUrl['user']) : (getenv('DB_USER') ?: (getenv('MYSQLUSER') ?: 'root')));
+if (!defined('DB_PASS')) define('DB_PASS', isset($parsedUrl['pass']) ? urldecode($parsedUrl['pass']) : (getenv('DB_PASS') ?: (getenv('MYSQLPASSWORD') ?: '')));
 
 // Application Details
 if (!defined('APP_NAME')) define('APP_NAME', 'Organ Donation & Matching Portal');
@@ -152,11 +152,40 @@ function get_db_connection($throwOnError = false) {
         PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
         PDO::ATTR_EMULATE_PREPARES   => false,
-        PDO::ATTR_TIMEOUT            => 2, // 2s timeout prevents serverless lambdas from hanging
+        PDO::ATTR_TIMEOUT            => 5,
     ];
+
+    // For cloud MySQL (remote host), allow SSL without strict local CA bundle verification
+    if (DB_HOST !== '127.0.0.1' && DB_HOST !== 'localhost') {
+        if (defined('PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT')) {
+            $options[PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT] = false;
+        }
+    }
 
     try {
         $pdo = new PDO($dsn, DB_USER, DB_PASS, $options);
+
+        // Auto-initialize schema if cloud database tables do not exist yet
+        static $schemaChecked = false;
+        if (!$schemaChecked) {
+            $schemaChecked = true;
+            try {
+                $checkTable = $pdo->query("SHOW TABLES LIKE 'users'")->fetch();
+                if (!$checkTable) {
+                    $sqlFile = __DIR__ . '/database.sql';
+                    if (file_exists($sqlFile)) {
+                        $sql = file_get_contents($sqlFile);
+                        // Strip CREATE DATABASE and USE statements so it imports cleanly into existing cloud db
+                        $sql = preg_replace('/CREATE\s+DATABASE[^;]+;/i', '', $sql);
+                        $sql = preg_replace('/USE\s+`?[^;`]+`?;/i', '', $sql);
+                        $pdo->exec($sql);
+                    }
+                }
+            } catch (Exception $schemaErr) {
+                error_log("Schema auto-initialization notice: " . $schemaErr->getMessage());
+            }
+        }
+
         return $pdo;
     } catch (PDOException $e) {
         $attempted = true;
