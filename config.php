@@ -8,16 +8,75 @@
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
+// Helper function to resolve environment variables across various PHP SAPIs / Vercel runtimes
+if (!function_exists('get_cfg_env')) {
+    function get_cfg_env($key, $default = null) {
+        if (!empty($_ENV[$key])) return trim((string)$_ENV[$key]);
+        if (!empty($_SERVER[$key])) return trim((string)$_SERVER[$key]);
+        $val = getenv($key);
+        if ($val !== false && $val !== '') return trim((string)$val);
+        return $default;
+    }
+}
+
+// Robust database connection URL parser
+if (!function_exists('parse_db_url')) {
+    function parse_db_url($url) {
+        if (empty($url)) return [];
+        $url = trim($url, " \t\n\r\0\x0B\"'");
+
+        // Standard parse_url attempt
+        $parsed = @parse_url($url);
+        if ($parsed && !empty($parsed['host'])) {
+            return [
+                'host' => $parsed['host'],
+                'port' => (string)($parsed['port'] ?? 3306),
+                'user' => isset($parsed['user']) ? urldecode($parsed['user']) : '',
+                'pass' => isset($parsed['pass']) ? urldecode($parsed['pass']) : '',
+                'name' => isset($parsed['path']) ? trim(urldecode($parsed['path']), '/') : ''
+            ];
+        }
+
+        // Regex fallback for passwords containing special characters (#, ?, @, !, etc.)
+        if (preg_match('~^[a-zA-Z0-9_+]+://(?P<user>[^:]+):(?P<pass>.+)@(?P<host>[^:/@?#\s]+)(?::(?P<port>\d+))?(?:/(?P<name>[^?#\s]*))?~s', $url, $matches)) {
+            return [
+                'host' => $matches['host'],
+                'port' => (string)(!empty($matches['port']) ? $matches['port'] : 3306),
+                'user' => urldecode($matches['user']),
+                'pass' => urldecode($matches['pass']),
+                'name' => urldecode($matches['name'] ?? '')
+            ];
+        }
+
+        // PDO DSN fallback (mysql:host=...;port=...;dbname=...)
+        if (preg_match('~host=(?P<host>[^;]+)~i', $url, $hMatch)) {
+            preg_match('~port=(?P<port>\d+)~i', $url, $pMatch);
+            preg_match('~dbname=(?P<name>[^;]+)~i', $url, $dMatch);
+            preg_match('~user=(?P<user>[^;]+)~i', $url, $uMatch);
+            preg_match('~password=(?P<pass>[^;]+)~i', $url, $pwMatch);
+            return [
+                'host' => trim($hMatch['host']),
+                'port' => (string)(!empty($pMatch['port']) ? $pMatch['port'] : 3306),
+                'user' => trim($uMatch['user'] ?? ''),
+                'pass' => trim($pwMatch['pass'] ?? ''),
+                'name' => trim($dMatch['name'] ?? '')
+            ];
+        }
+
+        return [];
+    }
+}
+
 // Parse connection URL if provided (e.g. DATABASE_URL or MYSQL_URL from cloud providers)
-$dbUrl = getenv('DATABASE_URL') ?: getenv('MYSQL_URL');
-$parsedUrl = $dbUrl ? parse_url($dbUrl) : [];
+$dbUrl = get_cfg_env('DATABASE_URL') ?: get_cfg_env('MYSQL_URL');
+$parsedUrl = $dbUrl ? parse_db_url($dbUrl) : [];
 
 // Database Credentials (support environment variables for cloud deployment such as Vercel/Railway/Aiven with local fallback)
-if (!defined('DB_HOST')) define('DB_HOST', $parsedUrl['host'] ?? (getenv('DB_HOST') ?: (getenv('MYSQLHOST') ?: '127.0.0.1')));
-if (!defined('DB_PORT')) define('DB_PORT', (string)($parsedUrl['port'] ?? (getenv('DB_PORT') ?: (getenv('MYSQLPORT') ?: '3306'))));
-if (!defined('DB_NAME')) define('DB_NAME', isset($parsedUrl['path']) ? ltrim($parsedUrl['path'], '/') : (getenv('DB_NAME') ?: (getenv('MYSQLDATABASE') ?: 'organ_donation_db')));
-if (!defined('DB_USER')) define('DB_USER', isset($parsedUrl['user']) ? urldecode($parsedUrl['user']) : (getenv('DB_USER') ?: (getenv('MYSQLUSER') ?: 'root')));
-if (!defined('DB_PASS')) define('DB_PASS', isset($parsedUrl['pass']) ? urldecode($parsedUrl['pass']) : (getenv('DB_PASS') ?: (getenv('MYSQLPASSWORD') ?: '')));
+if (!defined('DB_HOST')) define('DB_HOST', $parsedUrl['host'] ?? (get_cfg_env('DB_HOST') ?: (get_cfg_env('MYSQLHOST') ?: '127.0.0.1')));
+if (!defined('DB_PORT')) define('DB_PORT', (string)($parsedUrl['port'] ?? (get_cfg_env('DB_PORT') ?: (get_cfg_env('MYSQLPORT') ?: '3306'))));
+if (!defined('DB_NAME')) define('DB_NAME', !empty($parsedUrl['name']) ? $parsedUrl['name'] : (get_cfg_env('DB_NAME') ?: (get_cfg_env('MYSQLDATABASE') ?: 'organ_donation_db')));
+if (!defined('DB_USER')) define('DB_USER', isset($parsedUrl['user']) && $parsedUrl['user'] !== '' ? $parsedUrl['user'] : (get_cfg_env('DB_USER') ?: (get_cfg_env('MYSQLUSER') ?: 'root')));
+if (!defined('DB_PASS')) define('DB_PASS', isset($parsedUrl['pass']) ? $parsedUrl['pass'] : (get_cfg_env('DB_PASS') ?: (get_cfg_env('MYSQLPASSWORD') ?: '')));
 
 // Application Details
 if (!defined('APP_NAME')) define('APP_NAME', 'Organ Donation & Matching Portal');
@@ -210,7 +269,7 @@ function get_db_connection($throwOnError = false) {
                 error_log("Database Auto-Creation Error: " . $initErr->getMessage());
             }
         }
-        error_log("Database Connection Warning: " . $e->getMessage());
+        error_log("Database Connection Warning: Host=[" . DB_HOST . ":" . DB_PORT . "] DB=[" . DB_NAME . "] EnvSet=" . (!empty($dbUrl) ? 'YES' : 'NO') . " PDOError: " . $e->getMessage());
 
         if ($throwOnError) {
             die("<div style='font-family:sans-serif;padding:30px;max-width:640px;margin:50px auto;border:1px solid #fed7aa;background:#fffbeb;border-radius:12px;color:#9a3412;'>
