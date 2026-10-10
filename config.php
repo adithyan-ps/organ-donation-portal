@@ -4,9 +4,10 @@
  * System Configuration & Global Database Connection
  */
 
-// Error reporting for academic / development environment
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
+// Error reporting: Log errors safely without polluting HTTP output with deprecation warnings
+error_reporting(E_ALL & ~E_DEPRECATED & ~E_NOTICE);
+ini_set('display_errors', 0);
+ini_set('log_errors', 1);
 
 // Helper function to resolve environment variables across various PHP SAPIs / Vercel runtimes
 if (!function_exists('get_cfg_env')) {
@@ -219,10 +220,9 @@ function get_db_connection($throwOnError = false) {
         PDO::ATTR_TIMEOUT            => 5,
     ];
 
-    // Enable multi-statements for database migration execution
-    if (defined('PDO::MYSQL_ATTR_MULTI_STATEMENTS')) {
-        $options[PDO::MYSQL_ATTR_MULTI_STATEMENTS] = true;
-    }
+    // Multi-statements for schema migration execution
+    $multiStmtConst = defined('Pdo\Mysql::ATTR_MULTI_STATEMENTS') ? Pdo\Mysql::ATTR_MULTI_STATEMENTS : (defined('PDO::MYSQL_ATTR_MULTI_STATEMENTS') ? @constant('PDO::MYSQL_ATTR_MULTI_STATEMENTS') : 1007);
+    $options[$multiStmtConst] = true;
 
     // For cloud MySQL (remote host), enforce SSL/TLS encryption (required by TiDB Cloud, Aiven, PlanetScale)
     if (DB_HOST !== '127.0.0.1' && DB_HOST !== 'localhost') {
@@ -239,14 +239,16 @@ function get_db_connection($throwOnError = false) {
                 break;
             }
         }
-        if ($caBundle && defined('PDO::MYSQL_ATTR_SSL_CA')) {
-            $options[PDO::MYSQL_ATTR_SSL_CA] = $caBundle;
-        } elseif (defined('PDO::MYSQL_ATTR_SSL_CA')) {
-            $options[PDO::MYSQL_ATTR_SSL_CA] = true;
+
+        $sslCaConst = defined('Pdo\Mysql::ATTR_SSL_CA') ? Pdo\Mysql::ATTR_SSL_CA : (defined('PDO::MYSQL_ATTR_SSL_CA') ? @constant('PDO::MYSQL_ATTR_SSL_CA') : 1008);
+        $sslVerifyConst = defined('Pdo\Mysql::ATTR_SSL_VERIFY_SERVER_CERT') ? Pdo\Mysql::ATTR_SSL_VERIFY_SERVER_CERT : (defined('PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT') ? @constant('PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT') : 1014);
+
+        if ($caBundle) {
+            $options[$sslCaConst] = $caBundle;
+        } else {
+            $options[$sslCaConst] = true;
         }
-        if (defined('PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT')) {
-            $options[PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT] = false;
-        }
+        $options[$sslVerifyConst] = false;
     }
 
     try {
