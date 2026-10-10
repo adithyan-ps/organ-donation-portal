@@ -215,6 +215,11 @@ function get_db_connection($throwOnError = false) {
         PDO::ATTR_TIMEOUT            => 5,
     ];
 
+    // Enable multi-statements for database migration execution
+    if (defined('PDO::MYSQL_ATTR_MULTI_STATEMENTS')) {
+        $options[PDO::MYSQL_ATTR_MULTI_STATEMENTS] = true;
+    }
+
     // For cloud MySQL (remote host), allow SSL without strict local CA bundle verification
     if (DB_HOST !== '127.0.0.1' && DB_HOST !== 'localhost') {
         if (defined('PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT')) {
@@ -238,7 +243,22 @@ function get_db_connection($throwOnError = false) {
                         // Strip CREATE DATABASE and USE statements so it imports cleanly into existing cloud db
                         $sql = preg_replace('/CREATE\s+DATABASE[^;]+;/i', '', $sql);
                         $sql = preg_replace('/USE\s+`?[^;`]+`?;/i', '', $sql);
-                        $pdo->exec($sql);
+                        
+                        try {
+                            $pdo->exec($sql);
+                        } catch (Exception $batchErr) {
+                            // Fallback to statement-by-statement execution
+                            $statements = array_filter(array_map('trim', explode(';', $sql)));
+                            foreach ($statements as $singleStmt) {
+                                if (!empty($singleStmt)) {
+                                    try {
+                                        $pdo->exec($singleStmt);
+                                    } catch (Exception $stmtErr) {
+                                        // Ignore individual drop/warning errors
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             } catch (Exception $schemaErr) {
