@@ -74,7 +74,11 @@ $parsedUrl = $dbUrl ? parse_db_url($dbUrl) : [];
 // Database Credentials (support environment variables for cloud deployment such as Vercel/Railway/Aiven with local fallback)
 if (!defined('DB_HOST')) define('DB_HOST', $parsedUrl['host'] ?? (get_cfg_env('DB_HOST') ?: (get_cfg_env('MYSQLHOST') ?: '127.0.0.1')));
 if (!defined('DB_PORT')) define('DB_PORT', (string)($parsedUrl['port'] ?? (get_cfg_env('DB_PORT') ?: (get_cfg_env('MYSQLPORT') ?: '3306'))));
-if (!defined('DB_NAME')) define('DB_NAME', !empty($parsedUrl['name']) ? $parsedUrl['name'] : (get_cfg_env('DB_NAME') ?: (get_cfg_env('MYSQLDATABASE') ?: 'organ_donation_db')));
+$resolvedDb = !empty($parsedUrl['name']) ? $parsedUrl['name'] : (get_cfg_env('DB_NAME') ?: (get_cfg_env('MYSQLDATABASE') ?: 'organ_donation_db'));
+if ($resolvedDb === 'sys' || $resolvedDb === 'mysql') {
+    $resolvedDb = 'test';
+}
+if (!defined('DB_NAME')) define('DB_NAME', $resolvedDb);
 if (!defined('DB_USER')) define('DB_USER', isset($parsedUrl['user']) && $parsedUrl['user'] !== '' ? $parsedUrl['user'] : (get_cfg_env('DB_USER') ?: (get_cfg_env('MYSQLUSER') ?: 'root')));
 if (!defined('DB_PASS')) define('DB_PASS', isset($parsedUrl['pass']) ? $parsedUrl['pass'] : (get_cfg_env('DB_PASS') ?: (get_cfg_env('MYSQLPASSWORD') ?: '')));
 
@@ -220,8 +224,26 @@ function get_db_connection($throwOnError = false) {
         $options[PDO::MYSQL_ATTR_MULTI_STATEMENTS] = true;
     }
 
-    // For cloud MySQL (remote host), allow SSL without strict local CA bundle verification
+    // For cloud MySQL (remote host), enforce SSL/TLS encryption (required by TiDB Cloud, Aiven, PlanetScale)
     if (DB_HOST !== '127.0.0.1' && DB_HOST !== 'localhost') {
+        $caBundle = null;
+        $possibleCaPaths = [
+            __DIR__ . '/cacert.pem',
+            '/etc/ssl/certs/ca-certificates.crt',
+            '/etc/pki/tls/certs/ca-bundle.crt',
+            '/etc/ssl/cert.pem'
+        ];
+        foreach ($possibleCaPaths as $path) {
+            if (file_exists($path) && is_readable($path)) {
+                $caBundle = $path;
+                break;
+            }
+        }
+        if ($caBundle && defined('PDO::MYSQL_ATTR_SSL_CA')) {
+            $options[PDO::MYSQL_ATTR_SSL_CA] = $caBundle;
+        } elseif (defined('PDO::MYSQL_ATTR_SSL_CA')) {
+            $options[PDO::MYSQL_ATTR_SSL_CA] = true;
+        }
         if (defined('PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT')) {
             $options[PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT] = false;
         }
